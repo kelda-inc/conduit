@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-db
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: [
+            'sh',
+            '-c',
+            'until nc db 5432 < /dev/null; do sleep 2; done'
+        ]
+      containers:
+      - name: migrate-db
+        image: keldaio/conduit-django
+        command: [
+            "python", "manage.py", "migrate"
+        ]
+      restartPolicy: Never
+  backoffLimit: 4

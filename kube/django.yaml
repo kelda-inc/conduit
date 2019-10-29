@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: backend
+  template:
+    metadata:
+      labels:
+        service: backend
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: [
+            'sh',
+            '-c',
+            'until nc db 5432 < /dev/null; do sleep 2; done'
+        ]
+      containers:
+      - name: backend
+        image: keldaio/conduit-django
+        command:
+          - "python3"
+          - "manage.py"
+          - "runserver"
+          - "0.0.0.0:8000"
+        ports:
+        - containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: "/api/"
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 100m
+            memory: 30Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  selector:
+    service: backend

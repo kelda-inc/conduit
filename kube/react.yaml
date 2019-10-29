@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: frontend
+  template:
+    metadata:
+      labels:
+        service: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: keldaio/conduit-react
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: "/"
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 100m
+            memory: 30Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    service: frontend
