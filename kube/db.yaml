@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: db
+  template:
+    metadata:
+      labels:
+        name: db
+    spec:
+      containers:
+      - name: db
+        image: "postgres:12"
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          exec:
+            command: [ "/bin/sh", "-c", "pg_isready -h 127.0.0.1 -p 5432" ]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        env:
+        - name: POSTGRES_USER
+          value: conduit
+        - name: POSTGRES_PASSWORD
+          value: conduit
+        - name: POSTGRES_DB
+          value: conduit
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+            memory: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+  selector:
+    name: db
